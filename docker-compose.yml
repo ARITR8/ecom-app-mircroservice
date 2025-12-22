@@ -1,0 +1,141 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database Container (for Product and Order services)
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecom-postgres
+    environment:
+      POSTGRES_USER: embarkx
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ecomdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    networks:
+      - ecom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U embarkx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Database Management UI for PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ecom-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - ecom-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # MongoDB Database Container (for User service)
+  mongodb:
+    image: mongo:7
+    container_name: ecom-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - ecom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Eureka Server
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: ecom-eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - ecom-network
+    restart: unless-stopped
+
+  # User Microservice (Optional - if running in Docker)
+  # Comment out if running services locally
+  user-service:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    container_name: ecom-user-service
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/ecom_user
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    ports:
+      - "8082:8082"
+    networks:
+      - ecom-network
+    depends_on:
+      - mongodb
+      - eureka-server
+    restart: unless-stopped
+
+  # Product Microservice (Optional - if running in Docker)
+  # Comment out if running services locally
+  product-service:
+    build:
+      context: ./product
+      dockerfile: Dockerfile
+    container_name: ecom-product-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product
+      SPRING_DATASOURCE_USERNAME: embarkx # Fixed
+      SPRING_DATASOURCE_PASSWORD: password # Fixed
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    ports:
+      - "8081:8081"
+    networks:
+      - ecom-network
+    depends_on:
+      - postgres
+      - eureka-server
+    restart: unless-stopped
+
+  # Order Microservice (Optional - if running in Docker)
+  # Comment out if running services locally
+  order-service:
+    build:
+      context: ./order
+      dockerfile: Dockerfile
+    container_name: ecom-order-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order
+      SPRING_DATASOURCE_USERNAME: embarkx # Fixed
+      SPRING_DATASOURCE_PASSWORD: password # Fixed
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    ports:
+      - "8083:8083"
+    networks:
+      - ecom-network
+    depends_on:
+      - postgres
+      - eureka-server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  mongodb_data:
+
+networks:
+  ecom-network:
+    driver: bridge

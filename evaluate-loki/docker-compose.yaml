@@ -1,0 +1,86 @@
+gateway:
+  image: nginx:latest
+  depends_on:
+    - read
+    - write
+  entrypoint:
+    - sh
+    - -euc
+    - |
+      cat <<EOF > /etc/nginx/nginx.conf
+      user  nginx;
+      worker_processes  5;
+
+      events {
+        worker_connections   1000;
+      }
+
+      http {
+        resolver 127.0.0.11;
+
+        server {
+          listen             3100;
+
+          location = / {
+            return 200 'OK';
+            auth_basic off;
+          }
+
+          location = /ready {
+            proxy_pass       http://read:3100\$$request_uri;
+          }
+
+          location = /api/prom/push {
+            proxy_pass       http://write:3100\$$request_uri;
+          }
+
+          location = /api/prom/tail {
+            proxy_pass       http://read:3100\$$request_uri;
+            proxy_set_header Upgrade \$$http_upgrade;
+            proxy_set_header Connection "upgrade";
+          }
+
+          location ~ /api/prom/.* {
+            proxy_pass       http://read:3100\$$request_uri;
+          }
+
+          location = /loki/api/v1/push {
+            proxy_pass       http://write:3100\$$request_uri;
+          }
+
+          location = /loki/api/v1/tail {
+            proxy_pass       http://read:3100\$$request_uri;
+            proxy_set_header Upgrade \$$http_upgrade;
+            proxy_set_header Connection "upgrade";
+          }
+
+          location ~ /loki/api/.* {
+            proxy_pass       http://read:3100\$$request_uri;
+          }
+        }
+      }
+      EOF
+      /docker-entrypoint.sh nginx -g "daemon off;"
+  ports:
+    - "3100:3100"
+  healthcheck:
+    test: ["CMD", "service", "nginx", "status"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+  networks:
+    - loki
+alloy:
+  image: grafana/alloy:latest
+  volumes:
+    - ./alloy-local-config.yaml:/etc/alloy/config.alloy:ro
+    - ../../order/logs:/logs-order:ro
+    - ../../product/logs:/logs-product:ro
+    - ../../user/logs:/logs-user:ro
+  command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+  ports:
+    - "12345:12345"
+  depends_on:
+    - gateway
+  networks:
+    - loki

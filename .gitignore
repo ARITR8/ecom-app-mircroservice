@@ -1,0 +1,232 @@
+# ============================================
+# Java / Maven
+# ============================================
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.class
+
+# JAR files (but keep Maven wrapper)
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+*.war
+*.ear
+*.nar
+*.log
+*.ctxt
+.mvn/timing.properties
+!.mvn/wrapper/maven-wrapper.properties
+
+# ============================================
+# Application Logs
+# ============================================
+logs/
+*.log
+*.log.*
+*.log.*.gz
+*.log.*.zip
+**/logs/
+**/*.log
+**/*.log.*
+**/*.log.*.gz
+
+# ============================================
+# IDE - IntelliJ IDEA
+# ============================================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
+
+# ============================================
+# IDE - Eclipse
+# ============================================
+.classpath
+.project
+.settings/
+bin/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# ============================================
+# IDE - VS Code
+# ============================================
+.vscode/
+*.code-workspace
+
+# ============================================
+# IDE - NetBeans
+# ============================================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ============================================
+# Spring Boot
+# ============================================
+HELP.md
+application-local.yml
+application-local.yaml
+application-local.properties
+*.pid
+*.orig
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+.dockerignore
+docker-data/
+docker-volumes/
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+data/
+*.lck
+
+# ============================================
+# Environment Variables
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env
+secrets/
+*.secret
+application-secret.yml
+application-secret.yaml
+application-secret.properties
+
+# ============================================
+# Operating System Files
+# ============================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+$null
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# Testing
+# ============================================
+.surefire-reports/
+test-output/
+coverage/
+.nyc_output/
+*.lcov
+junit.xml
+TEST-*.xml
+*.dumpstream
+
+# ============================================
+# Build Tools
+# ============================================
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+.gradletasknamecache
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+*.cache
+.cache/
+
+# ============================================
+# Package Files
+# ============================================
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ============================================
+# Application Specific
+# ============================================
+# Loki data
+evaluate-loki/data/
+evaluate-loki/$null
+
+# pgAdmin data
+pgadmin_data/
+
+# PostgreSQL data
+postgres_data/
+
+# MongoDB data
+mongodb_data/
+
+# ============================================
+# Miscellaneous
+# ============================================
+*.pid
+*.seed
+*.pid.lock
+.history/
+node_modules/
+.npm/
+.yarn/
+.pnp/
+.pnp.js
+
