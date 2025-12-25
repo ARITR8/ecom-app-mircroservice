@@ -6,6 +6,15 @@ target/
 !**/src/test/**/target/
 *.class
 
+# Maven generated folders
+**/generated-sources/
+**/generated-test-sources/
+**/maven-archiver/
+**/maven-status/
+**/test-classes/
+**/classes/
+*.jar.original
+
 # JAR files (but keep Maven wrapper)
 *.jar
 !**/.mvn/wrapper/maven-wrapper.jar
@@ -158,6 +167,7 @@ Temporary Items
 # Testing
 # ============================================
 .surefire-reports/
+**/surefire-reports/
 test-output/
 coverage/
 .nyc_output/
@@ -206,6 +216,7 @@ build/
 # ============================================
 # Loki data
 evaluate-loki/data/
+evaluate-loki/.data/
 evaluate-loki/$null
 
 # pgAdmin data

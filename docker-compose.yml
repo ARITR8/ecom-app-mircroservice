@@ -70,6 +70,16 @@ services:
       - ecom-network
     restart: unless-stopped
 
+  # Zipkin - Distributed Tracing Server
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: ecom-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - ecom-network
+    restart: unless-stopped
+
   # User Microservice (Optional - if running in Docker)
   # Comment out if running services locally
   user-service:
