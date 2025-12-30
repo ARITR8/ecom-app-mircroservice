@@ -32,6 +32,8 @@ This e-commerce application is built using a microservices architecture pattern,
 - **Microservices Architecture**: Modular, independently deployable services
 - **API Gateway**: Spring Cloud Gateway for unified entry point and routing
 - **Service Discovery**: Netflix Eureka for service registration and discovery
+- **Configuration Management**: Spring Cloud Config Server for centralized configuration
+- **Message Queue**: RabbitMQ for asynchronous event-driven communication
 - **Multi-Database Support**: PostgreSQL for relational data, MongoDB for document storage
 - **Containerized Deployment**: Docker and Docker Compose for easy deployment
 - **Observability**: Loki integration for centralized logging with Grafana Alloy
@@ -59,6 +61,15 @@ This e-commerce application is built using a microservices architecture pattern,
 - Order creation and processing
 - Integration with User and Product services
 - PostgreSQL-based order storage
+- Event publishing to RabbitMQ for order notifications
+
+### Notification Service
+
+- Asynchronous order notification processing
+- Email notifications for order confirmations
+- SMS notifications
+- Invoice generation
+- RabbitMQ message consumption for order events
 
 ### API Gateway
 
@@ -73,6 +84,21 @@ This e-commerce application is built using a microservices architecture pattern,
 - Netflix Eureka server for service registration
 - Automatic service discovery and load balancing
 - Health monitoring and service status tracking
+
+### Configuration Server
+
+- Spring Cloud Config Server for centralized configuration management
+- Native profile with classpath-based configuration
+- Service-specific configuration files
+- Dynamic configuration updates support
+
+### Message Queue (RabbitMQ)
+
+- Asynchronous event-driven communication
+- Order event publishing from Order Service
+- Notification event consumption by Notification Service
+- Topic exchange pattern for flexible routing
+- JSON message serialization
 
 ### Observability
 
@@ -101,35 +127,40 @@ This e-commerce application is built using a microservices architecture pattern,
 │   (Port 8761)  │            │   (Port 9411)   │
 └───────┬────────┘            └─────────────────┘
         │
-        ├──────────────┬───────────────┬──────────────┐
-        │              │               │              │
-┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐ ┌────▼──────┐
-│ User Service │ │Product Svc │ │Order Svc   │ │  Others   │
-│  (Port 8082) │ │(Port 8081) │ │(Port 8083) │ │           │
-└───────┬──────┘ └─────┬──────┘ └─────┬──────┘ └───────────┘
-        │              │               │
-        │              │               │
-┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐
-│   MongoDB    │ │ PostgreSQL │ │ PostgreSQL │
-│  (Port 27017)│ │(Port 5432) │ │(Port 5432) │
-└──────────────┘ └────────────┘ └────────────┘
+        ├──────────────┬───────────────┬──────────────┬──────────────┐
+        │              │               │              │              │
+┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐
+│ Config Server│ │ User Service│ │Product Svc │ │Order Svc   │ │Notification│
+│  (Port 8887) │ │  (Port 8082)│ │(Port 8081) │ │(Port 8083) │ │  (Port 8084)│
+└───────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘
+        │              │               │              │              │
+        │              │               │              │              │
+┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐       │
+│   MongoDB    │ │ PostgreSQL │ │ PostgreSQL │ │ RabbitMQ   │◄──────┘
+│  (Port 27017)│ │(Port 5432) │ │(Port 5432) │ │(Port 5672) │
+└──────────────┘ └────────────┘ └────────────┘ └────────────┘
                         │
                 ┌───────▼────────┐
                 │  Loki + Alloy   │
                 │  (Port 3100)    │
                 └─────────────────┘
+
+Note: Kafka (Port 9092) and Zookeeper (Port 2181) are configured
+      but not yet implemented in the services.
 ```
 
 ### Service Communication Flow
 
 1. **Client Request**: All client requests first hit the API Gateway (Port 8089)
-2. **Service Registration**: All microservices register themselves with Eureka Server on startup
-3. **Service Discovery**: Gateway and services discover each other through Eureka using service names
-4. **Request Routing**: Gateway routes requests to appropriate microservices based on path patterns
-5. **Inter-Service Communication**: REST-based communication using service names (e.g., `user-service`, `product-service`)
-6. **Distributed Tracing**: All requests are traced through Zipkin for observability
-7. **Logging**: All service logs are collected by Grafana Alloy and forwarded to Loki
-8. **Database Isolation**: Each service maintains its own database for data isolation
+2. **Configuration Loading**: Services load configuration from Config Server (Port 8887) on startup
+3. **Service Registration**: All microservices register themselves with Eureka Server on startup
+4. **Service Discovery**: Gateway and services discover each other through Eureka using service names
+5. **Request Routing**: Gateway routes requests to appropriate microservices based on path patterns
+6. **Inter-Service Communication**: REST-based communication using service names (e.g., `user-service`, `product-service`)
+7. **Event-Driven Communication**: Order Service publishes events to RabbitMQ, Notification Service consumes them asynchronously
+8. **Distributed Tracing**: All requests are traced through Zipkin for observability
+9. **Logging**: All service logs are collected by Grafana Alloy and forwarded to Loki
+10. **Database Isolation**: Each service maintains its own database for data isolation
 
 ## 🛠️ Technology Stack
 
@@ -138,8 +169,10 @@ This e-commerce application is built using a microservices architecture pattern,
 - **Java 21**: Modern Java features and performance improvements
 - **Spring Boot 3.2.5**: Application framework
 - **Spring Cloud 2023.0.1**: Microservices infrastructure
+- **Spring Cloud Config**: Centralized configuration management
 - **Spring Data JPA**: Database persistence for PostgreSQL services
 - **Spring Data MongoDB**: Document database persistence
+- **Spring AMQP**: RabbitMQ integration for message queuing
 - **Netflix Eureka**: Service discovery and registration
 - **Lombok**: Boilerplate code reduction
 
@@ -152,6 +185,9 @@ This e-commerce application is built using a microservices architecture pattern,
 
 - **Docker & Docker Compose**: Containerization and orchestration
 - **Maven**: Build and dependency management
+- **RabbitMQ**: Message broker for asynchronous communication
+- **Apache Kafka**: Event streaming platform (configured, not yet implemented)
+- **Zookeeper**: Coordination service for Kafka
 - **Grafana Loki**: Log aggregation system with MinIO storage backend
 - **Grafana Alloy**: Log collection agent for centralized logging
 - **Zipkin**: Distributed tracing system for request tracking
@@ -182,10 +218,10 @@ cd ecom_app_microservice
 
 #### 1. Start Infrastructure Services
 
-Start the databases and Eureka server using Docker Compose:
+Start the databases, message broker, and Eureka server using Docker Compose:
 
 ```bash
-docker-compose up -d postgres mongodb eureka-server pgadmin
+docker-compose up -d postgres mongodb eureka-server pgadmin rabbitmq
 ```
 
 This will start:
@@ -194,6 +230,14 @@ This will start:
 - MongoDB on port `27017`
 - Eureka Server on port `8761`
 - pgAdmin on port `5050`
+- RabbitMQ on ports `5672` (AMQP) and `15672` (Management UI)
+
+**Note**: 
+- Config Server needs to be started separately (see step 4 below) as it's not yet containerized
+- Kafka and Zookeeper are also configured in docker-compose.yml but are not yet implemented in the services. You can start them with:
+```bash
+docker-compose up -d zookeeper kafka
+```
 
 #### 2. Verify Database Setup
 
@@ -221,35 +265,49 @@ cd ../eureka-server && mvn clean install
 
 Start services in the following order:
 
-**Terminal 1 - Eureka Server:**
+**Terminal 1 - Config Server:**
+
+```bash
+cd config-server
+mvn spring-boot:run
+```
+
+**Terminal 2 - Eureka Server:**
 
 ```bash
 cd eureka-server
 mvn spring-boot:run
 ```
 
-**Terminal 2 - User Service:**
+**Terminal 3 - User Service:**
 
 ```bash
 cd user
 mvn spring-boot:run
 ```
 
-**Terminal 3 - Product Service:**
+**Terminal 4 - Product Service:**
 
 ```bash
 cd product
 mvn spring-boot:run
 ```
 
-**Terminal 4 - Order Service:**
+**Terminal 5 - Order Service:**
 
 ```bash
 cd order
 mvn spring-boot:run
 ```
 
-**Terminal 5 - API Gateway:**
+**Terminal 6 - Notification Service:**
+
+```bash
+cd notification
+mvn spring-boot:run
+```
+
+**Terminal 7 - API Gateway:**
 
 ```bash
 cd gateway
@@ -279,17 +337,32 @@ Once all services are running:
 
 - **API Gateway**: http://localhost:8089 (Unified entry point for all services)
 - **Eureka Dashboard**: http://localhost:8761
+- **Config Server**: http://localhost:8887 (Configuration management)
 - **Zipkin Tracing UI**: http://localhost:9411
+- **RabbitMQ Management UI**: http://localhost:15672 (guest / guest)
 - **User Service** (Direct): http://localhost:8082
 - **Product Service** (Direct): http://localhost:8081
 - **Order Service** (Direct): http://localhost:8083
+- **Notification Service** (Direct): http://localhost:8084
 - **pgAdmin**: http://localhost:5050 (admin@admin.com / admin)
 - **Loki Gateway**: http://localhost:3100 (Log aggregation endpoint)
+
+**Note**: Kafka is configured on port `9092` and Zookeeper on port `2181`, but they are not yet implemented in the services.
 
 ## 📁 Project Structure
 
 ```
 ecom_app_microservice/
+├── config-server/          # Configuration server
+│   ├── src/
+│   │   ├── main/java/      # Java source code
+│   │   └── main/resources/ # Configuration files
+│   │       └── config/     # Service-specific configs
+│   │           ├── user-service.yaml
+│   │           ├── product-service.yaml
+│   │           ├── order-service.yaml
+│   │           └── gateway-service.yaml
+│   └── pom.xml
 ├── eureka-server/          # Service discovery server
 │   ├── src/
 │   │   ├── main/java/      # Java source code
@@ -316,9 +389,14 @@ ecom_app_microservice/
 │   └── pom.xml
 ├── order/                  # Order microservice
 │   ├── src/
-│   │   ├── main/java/      # Java source code
+│   │   ├── main/java/      # Java source code (includes RabbitMQ config)
 │   │   └── main/resources/ # Configuration files
 │   ├── logs/               # Application logs
+│   └── pom.xml
+├── notification/           # Notification microservice
+│   ├── src/
+│   │   ├── main/java/      # Java source code (RabbitMQ consumer)
+│   │   └── main/resources/ # Configuration files
 │   └── pom.xml
 ├── evaluate-loki/          # Observability setup
 │   ├── docker-compose.yaml # Loki & Alloy services
@@ -491,25 +569,31 @@ curl -X POST http://localhost:8083/api/orders \
 1. **Start Infrastructure**:
 
    ```bash
-   docker-compose up -d postgres mongodb eureka-server
+   docker-compose up -d postgres mongodb eureka-server rabbitmq config-server
    ```
 
 2. **Start Services** (in separate terminals):
 
    ```bash
-   # Terminal 1 - Eureka Server
+   # Terminal 1 - Config Server
+   cd config-server && mvn spring-boot:run
+
+   # Terminal 2 - Eureka Server
    cd eureka-server && mvn spring-boot:run
 
-   # Terminal 2 - User Service
+   # Terminal 3 - User Service
    cd user && mvn spring-boot:run
 
-   # Terminal 3 - Product Service
+   # Terminal 4 - Product Service
    cd product && mvn spring-boot:run
 
-   # Terminal 4 - Order Service
+   # Terminal 5 - Order Service
    cd order && mvn spring-boot:run
 
-   # Terminal 5 - API Gateway
+   # Terminal 6 - Notification Service
+   cd notification && mvn spring-boot:run
+
+   # Terminal 7 - API Gateway
    cd gateway && mvn spring-boot:run
    ```
 
@@ -563,6 +647,34 @@ This will start:
 - Loki Gateway: http://localhost:3100
 - Alloy Metrics: http://localhost:12345/metrics
 
+### RabbitMQ Message Flow
+
+The application uses RabbitMQ for asynchronous event-driven communication:
+
+**1. Start RabbitMQ:**
+
+```bash
+docker-compose up -d rabbitmq
+```
+
+**2. Message Flow:**
+
+- **Order Service** publishes `OrderCreatedEvent` to RabbitMQ when an order is created
+- **Notification Service** consumes these events from the `notification.queue`
+- Events are routed through the `order.exchange` topic exchange with routing key `order.created`
+- Notification Service processes events asynchronously to send emails, SMS, and generate invoices
+
+**3. Verify RabbitMQ:**
+
+- RabbitMQ Management UI: http://localhost:15672 (guest / guest)
+- Check queues, exchanges, and message flow in the management interface
+
+**4. Test Event Flow:**
+
+1. Create an order via Order Service API
+2. Check RabbitMQ Management UI to see the message in `notification.queue`
+3. Verify Notification Service logs for event processing
+
 ## 🚧 Development Status
 
 **Current Status**: 🟡 **In Development**
@@ -574,10 +686,14 @@ This project is currently under active development. The following features are i
 - Basic microservices architecture
 - Service discovery with Eureka
 - **API Gateway with Spring Cloud Gateway** ✨
-- User, Product, and Order services
+- **Spring Cloud Config Server** ✨ (Centralized configuration management)
+- User, Product, Order, and Notification services
 - RESTful API endpoints
 - Database integration (PostgreSQL & MongoDB)
 - Docker containerization
+- **RabbitMQ integration** ✨ (Event-driven communication)
+  - Order Service publishes order events
+  - Notification Service consumes order events asynchronously
 - **Centralized logging with Loki and Grafana Alloy** ✨
 - **Distributed tracing with Zipkin** ✨
 - **Request logging filter in Gateway** ✨
@@ -594,10 +710,9 @@ This project is currently under active development. The following features are i
 
 📋 **Planned:**
 
+- **Kafka integration** (Infrastructure configured, service implementation pending)
 - Payment service integration
-- Notification service
 - Caching layer (Redis)
-- Message queue (RabbitMQ/Kafka)
 - Monitoring and metrics (Prometheus, Grafana dashboards)
 - CI/CD pipeline
 - Kubernetes deployment manifests
