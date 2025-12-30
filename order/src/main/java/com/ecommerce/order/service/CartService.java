@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import com.ecommerce.order.model.CartItem;
 import com.ecommerce.order.dto.CartItemRequest;
 import com.ecommerce.order.repository.CartItemRepository;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import com.ecommerce.order.client.UserServiceClient;
 import com.ecommerce.order.dto.UserResponse;
 
@@ -22,6 +25,7 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final UserServiceClient userServiceClient;
     
+    @CircuitBreaker(name = "userService", fallbackMethod = "addToCartFallback")
     public boolean addToCart(String userId, CartItemRequest request) {
         logger.debug("Adding to cart: userId={}, productId={}, quantity={}", 
             userId, request.getProductId(), request.getQuantity());
@@ -62,6 +66,13 @@ public class CartService {
         }
         
         return true;
+    }
+
+    // Fallback method when circuit breaker is open
+    public boolean addToCartFallback(String userId, CartItemRequest request, Exception ex) {
+        logger.error("Circuit breaker opened for userService. Fallback triggered for userId={}, productId={}. Error: {}", 
+            userId, request.getProductId(), ex.getMessage());
+        return false; // Return false when user service is unavailable
     }
     
     public List<CartItem> getCart(String userId) {

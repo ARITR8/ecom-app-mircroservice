@@ -16,22 +16,22 @@ public class UserServiceClientConfig {
     @Bean
     public UserServiceClient userServiceClientInterface(RestClient.Builder restClientBuilder) {
         
-        // Create RestClient instance
         RestClient restClient = restClientBuilder
-                .baseUrl("http://user-service")  // Service name from Eureka
+                .baseUrl("http://user-service")
                 .build();
         
-        // Return a lambda implementation that uses RestClient directly
-        // This avoids the adapter dependency issues
         return id -> {
             try {
                 return restClient.get()
                     .uri("/api/users/{id}", id)
                     .retrieve()
                     .body(UserResponse.class);
-            } catch (Exception e) {
-                // Return null on any error (404, 500, etc.)
+            } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+                // 404 - User not found (this is a valid business case, return null)
                 return null;
+            } catch (Exception e) {
+                // Service unavailable, connection errors, etc. - throw exception for circuit breaker
+                throw new RuntimeException("User service unavailable: " + e.getMessage(), e);
             }
         };
     }

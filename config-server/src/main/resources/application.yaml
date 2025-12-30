@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native # or git, vault, etc.
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config # Points to config/ folder
+
+server:
+  port: 8887
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

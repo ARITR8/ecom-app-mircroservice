@@ -26,6 +26,7 @@ public class OrderService {
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private final OrderRepository orderRepository;
     private final CartService cartService;
+    private final OrderEventPublisher orderEventPublisher;
     
     @Transactional
 public Optional<OrderResponse> createOrder(String userId) {
@@ -73,6 +74,9 @@ public Optional<OrderResponse> createOrder(String userId) {
         // Clear the cart after order is placed
         cartService.clearCart(userId);
         logger.debug("Cart cleared for userId: {}", userId);
+
+        // Publish order created event asynchronously
+        orderEventPublisher.publishOrderCreatedEvent(savedOrder);
         
         // Convert Order to OrderResponse
         return Optional.of(mapToOrderResponse(savedOrder));
